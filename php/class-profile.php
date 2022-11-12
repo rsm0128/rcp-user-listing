@@ -31,6 +31,7 @@ class Profile extends Singletone {
 	public function init() {
 		add_action( 'init', array( $this, 'register_profile_cpt' ) );
 		add_action( 'user_register', array( $this, 'add_profile_post' ), 99, 2 );
+		add_action( 'delete_user', array( $this, 'delete_profile_post', 99, 1 ) );
 	}
 
 	/**
@@ -86,6 +87,20 @@ class Profile extends Singletone {
 		$post_id = wp_insert_post( $post_data );
 
 		update_user_meta( $user_id, self::USER_META_KEY, $post_id );
+	}
+
+	/**
+	 * Delete profile post.
+	 *
+	 * @param int $user_id
+	 */
+	public function delete_profile_post( $user_id ) {
+		$profile_id = get_user_meta( $user_id, self::USER_META_KEY, true );
+		if ( empty( $profile_id ) ) {
+			return;
+		}
+
+		wp_delete_post( $profile_id, true );
 	}
 
 	/**

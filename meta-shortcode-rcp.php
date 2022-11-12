@@ -3,7 +3,7 @@
  * Plugin Name: MetaShortcode Restrict Content Pro Addon
  * Plugin URI: https://github.com/rsm0128/meta-shortcode-rcp
  * Description: This plugin is to render meta value on frontend
- * Version: 1.0
+ * Version: 1.1
  * Author: rsm0128
  * Author URI: https://github.com/rsm0128/
  * Text Domain: msrcp
