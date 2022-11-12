@@ -73,9 +73,13 @@ class Profile extends Singletone {
 			'post_status' => 'draft',
 		);
 
-		$membership      = new \RCP\Database\Queries\Membership();
-		$user_membership = $membership->get_item_by( 'user_id', $user_id );
-		if ( ! empty( $user_membership ) && 'active' === $user_membership->status ) {
+		if ( class_exists( '\RCP\Database\Queries\Membership' ) ) {
+			$membership      = new \RCP\Database\Queries\Membership();
+			$user_membership = $membership->get_item_by( 'user_id', $user_id );
+			if ( ! empty( $user_membership ) && 'active' === $user_membership->status ) {
+				$post_data['post_status'] = 'publish';
+			}
+		} else {
 			$post_data['post_status'] = 'publish';
 		}
 
