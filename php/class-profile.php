@@ -31,7 +31,7 @@ class Profile extends Singletone {
 	public function init() {
 		add_action( 'init', array( $this, 'register_profile_cpt' ) );
 		add_action( 'user_register', array( $this, 'add_profile_post' ), 99, 2 );
-		add_action( 'delete_user', array( $this, 'delete_profile_post', 99, 1 ) );
+		add_action( 'delete_user', array( $this, 'delete_profile_post' ), 99, 1 );
 		add_action( 'admin_notices', array( $this, 'admin_notices' ) );
 		add_action( 'admin_init', array( $this, 'crete_profile_for_existing_users' ) );
 	}
