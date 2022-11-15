@@ -2,10 +2,10 @@
 /**
  * Profile.
  *
- * @package MetaShortcodeRcp
+ * @package UserListingRCP
  */
 
-namespace MetaShortcodeRcp;
+namespace UserListingRCP;
 
 /**
  * Profile class.

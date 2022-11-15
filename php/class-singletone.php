@@ -2,15 +2,15 @@
 /**
  * Singletone abscract class.
  *
- * @package MetaShortcodeRcp
+ * @package UserListingRCP
  */
 
-namespace MetaShortcodeRcp;
+namespace UserListingRCP;
 
 /**
  * Class Singletone
  *
- * @package MetaShortcodeRcp
+ * @package UserListingRCP
  */
 abstract class Singletone {
 

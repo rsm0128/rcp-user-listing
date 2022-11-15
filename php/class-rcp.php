@@ -2,12 +2,12 @@
 /**
  * Restrict Content Pro Integration.
  *
- * @package MetaShortcodeRcp
+ * @package UserListingRCP
  */
 
-namespace MetaShortcodeRcp;
+namespace UserListingRCP;
 
-use MetaShortcodeRcp\Profile;
+use UserListingRCP\Profile;
 
 /**
  * Restrict Content Pro Integration class.

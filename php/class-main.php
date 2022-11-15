@@ -2,13 +2,13 @@
 /**
  * Bootstraps the Meta.
  *
- * @package MetaShortcodeRcp
+ * @package UserListingRCP
  */
 
-namespace MetaShortcodeRcp;
+namespace UserListingRCP;
 
-use MetaShortcodeRcp\Profile;
-use MetaShortcodeRcp\RCP;
+use UserListingRCP\Profile;
+use UserListingRCP\RCP;
 
 /**
  * Main bootstrap file.
