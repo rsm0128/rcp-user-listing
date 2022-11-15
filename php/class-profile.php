@@ -23,17 +23,26 @@ class Profile extends Singletone {
 	 *
 	 * @var string
 	 */
-	const USER_META_KEY = 'profile_id';
+	const PROFILE_META_KEY = 'profile_id';
+
+	/**
+	 * Company name meta key.
+	 *
+	 * @var string
+	 */
+	const COMPAMNY_META_KEY = 'member_business_name';
 
 	/**
 	 * Initiate the resources.
 	 */
 	public function init() {
 		add_action( 'init', array( $this, 'register_profile_cpt' ) );
-		add_action( 'user_register', array( $this, 'add_profile_post' ), 99, 2 );
+		add_action( 'user_register', array( $this, 'add_profile_post' ), 99, 1 );
 		add_action( 'delete_user', array( $this, 'delete_profile_post' ), 99, 1 );
 		add_action( 'admin_notices', array( $this, 'admin_notices' ) );
 		add_action( 'admin_init', array( $this, 'crete_profile_for_existing_users' ) );
+
+		add_filter( 'update_user_metadata', array( $this, 'update_profile_title' ), 10, 4 );
 	}
 
 	/**
@@ -54,20 +63,29 @@ class Profile extends Singletone {
 	}
 
 	/**
+	 * Get business name by user_id.
+	 * Returns COMPAMNY_META_KEY value or `No company {user_id}`
+	 *
+	 * @param int $user_id User ID.
+	 * @return string
+	 */
+	private function generate_profile_title( $user_id ) {
+		$business_name = get_user_meta( $user_id, self::COMPAMNY_META_KEY, true );
+		if ( $business_name ) {
+			return $business_name;
+		}
+
+		return 'No company for ' . $user_id;
+	}
+
+	/**
 	 * Adds profile cpt post on user creation.
 	 *
 	 * @param int   $user_id  User ID.
-	 * @param array $userdata The raw array of data passed to wp_insert_user().
 	 */
-	public function add_profile_post( $user_id, $userdata ) {
+	public function add_profile_post( $user_id ) {
 		// Generate post_title with fname and lname.
-		$first_name = empty( $userdata['first_name'] ) ? '' : $userdata['first_name'];
-		$last_name  = empty( $userdata['last_name'] ) ? '' : $userdata['last_name'];
-		if ( ! empty( $first_name ) && ! empty( $last_name ) ) {
-			$post_title = $first_name . ' ' . $last_name;
-		} else {
-			$post_title = $userdata['user_login'];
-		}
+		$post_title = $this->generate_profile_title( $user_id );
 
 		$post_data = array(
 			'post_title'  => $post_title,
@@ -88,7 +106,7 @@ class Profile extends Singletone {
 
 		$post_id = wp_insert_post( $post_data );
 
-		update_user_meta( $user_id, self::USER_META_KEY, $post_id );
+		update_user_meta( $user_id, self::PROFILE_META_KEY, $post_id );
 	}
 
 	/**
@@ -97,7 +115,7 @@ class Profile extends Singletone {
 	 * @param int $user_id
 	 */
 	public function delete_profile_post( $user_id ) {
-		$profile_id = get_user_meta( $user_id, self::USER_META_KEY, true );
+		$profile_id = get_user_meta( $user_id, self::PROFILE_META_KEY, true );
 		if ( empty( $profile_id ) ) {
 			return;
 		}
@@ -112,7 +130,7 @@ class Profile extends Singletone {
 	 * @return string
 	 */
 	public static function get_profile_by_user( $user_id ) {
-		return get_user_meta( $user_id, self::USER_META_KEY, true );
+		return get_user_meta( $user_id, self::PROFILE_META_KEY, true );
 	}
 
 	/**
@@ -206,14 +224,7 @@ class Profile extends Singletone {
 		);
 
 		foreach ( $all_users as $user ) {
-			$this->add_profile_post(
-				$user->ID,
-				array(
-					'first_name' => $user->first_name,
-					'last_name'  => $user->last_name,
-					'user_login' => $user->user_login,
-				)
-			);
+			$this->add_profile_post( $user->ID );
 		}
 
 		delete_transient( $transient_name );
@@ -254,4 +265,26 @@ class Profile extends Singletone {
 		}
 	}
 
+	/**
+	 * Update profile title on user update.
+	 * @param null|bool $check      Whether to allow updating metadata for the given type.
+	 * @param int       $user_id    ID of the object metadata is for.
+	 * @param string    $meta_key   Metadata key.
+	 * @param mixed     $meta_value Metadata value. Must be serializable if non-scalar.
+	 */
+	public function update_profile_title( $check, $user_id, $meta_key, $meta_value ) {
+		if ( self::COMPAMNY_META_KEY === $meta_key ) {
+			$profile_id = $this->get_profile_by_user( $user_id );
+			if ( ! empty( $profile_id ) ) {
+				wp_update_post(
+					array(
+						'ID'         => $profile_id,
+						'post_title' => $meta_value,
+					)
+				);
+			}
+		}
+
+		return $check;
+	}
 }
