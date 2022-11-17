@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name: User Listing Addon for Restrict Content Pro
- * Plugin URI: https://github.com/rsm0128/meta-shortcode-rcp
+ * Plugin Name: Restrict Content Pro User Listing Addon
+ * Plugin URI: https://github.com/rsm0128/rcp-user-listing
  * Description: This plugin provides user listing with restrict content pro support.
  * Version: 1.2
  * Author: rsm0128
