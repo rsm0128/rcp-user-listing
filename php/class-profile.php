@@ -281,6 +281,7 @@ class Profile extends Singletone {
 					array(
 						'ID'         => $profile_id,
 						'post_title' => $meta_value,
+						'post_name'  => sanitize_title( $meta_value ),
 					)
 				);
 			}
