@@ -58,6 +58,7 @@ class Profile extends Singletone {
 				'create_posts' => false,
 			),
 			'map_meta_cap'    => true,
+			'supports'        => array( 'title', 'editor', 'author' ),
 		);
 		register_post_type( self::CPT_NAME, $args );
 	}
