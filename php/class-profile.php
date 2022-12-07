@@ -42,6 +42,8 @@ class Profile extends Singletone {
 		add_action( 'admin_notices', array( $this, 'admin_notices' ) );
 		add_action( 'admin_init', array( $this, 'crete_profile_for_existing_users' ) );
 
+		add_shortcode( 'profile_listing', array( $this, 'listing_markup' ) );
+
 		add_filter( 'update_user_metadata', array( $this, 'update_profile_title' ), 10, 4 );
 	}
 
@@ -288,5 +290,130 @@ class Profile extends Singletone {
 		}
 
 		return $check;
+	}
+
+	/**
+	 * Profile listing html.
+	 */
+	public function listing_markup( $atts ) {
+		$per_page     = ! empty( $_GET['per_page'] ) ? (int) $_GET['per_page'] : 20;
+		$current_page = ! empty( $_GET['_page'] ) ? (int) $_GET['_page'] : 1;
+		$name         = ! empty( $_GET['name'] ) ? sanitize_text_field( $_GET['name'] ) : '';
+		$service      = ! empty( $_GET['service'] ) ? sanitize_text_field( $_GET['service'] ) : '';
+		$is_near_me   = ! empty( $_GET['near_me'] );
+		$position     = array( 0, 0 );
+
+		$profiles = $this->search_profiles(
+			array(
+				'per_page'   => $per_page,
+				'page'       => $current_page,
+				'name'       => $name,
+				'service'    => $service,
+				'is_near_me' => $is_near_me,
+				'position'   => $position,
+			)
+		);
+
+		ob_start();
+		?>
+
+		<div class="profile-directory">
+			<div class="profile-search">
+				<form action="" method="GET">
+					<input type="text" name="name" value="<?php echo esc_attr( $name ) ?>">
+					<input type="text" name="service" value="<?php echo esc_attr( $service ) ?>">
+					<input type="submit" value="Search">
+				</form>
+			</div><!-- end of .profile-search -->
+			<div class="profile-items">
+
+		<?php
+		if ( ! is_wp_error( $profiles ) && ! empty( $profiles ) ) {
+			foreach ( $profiles as $profile ) {
+				$profile_id = $profile['ID'];
+				?>
+				<div class="profile-directory__item">
+					<a class="profile-directory__item-link" href="<?php echo esc_url( get_permalink( $profile_id ) ); ?>"><?php echo esc_html( get_the_title( $profile_id ) ) ?></a>
+				</div>
+				<?php
+			}
+		} else {
+			?>
+				<div class="profile-not-found"><?php echo esc_html_e( 'No Profile Found.', 'msrcp' ) ?></div>
+			<?php
+		}
+
+		?>
+			</div><!-- end of .profile-items -->
+		</div><!-- end of .profile-directory -->
+
+		<?php
+
+		return ob_get_clean();
+	}
+
+	/**
+	 * Search profiles
+	 *
+	 * @param array $args Search args.
+	 * @return array Profile array.
+	 */
+	public function search_profiles( $args ) {
+		$defaults = array(
+			'per_page'   => 20,
+			'page'       => 1,
+			'name'       => '',
+			'service'    => '',
+			'is_near_me' => false,
+			'position'   => array(),
+		);
+
+		$args = wp_parse_args( $args, $defaults );
+
+		$per_page     = (int) $args['per_page'];
+		$current_page = (int) $args['page'];
+
+		global $wpdb;
+		$tbl_posts    = $wpdb->posts;
+		$tbl_postmeta = $wpdb->postmeta;
+		$tbl_users    = $wpdb->users;
+		$tbl_usermeta = $wpdb->usermeta;
+
+		$sql   = "SELECT posts.* FROM $tbl_posts as posts";
+		$join  = '';
+		$where = sprintf( ' WHERE posts.post_status="publish" AND posts.post_type="%s"', esc_sql( self::CPT_NAME ) );
+		if ( ! empty( $args['name'] ) ) {
+			$where .= ' AND posts.post_title like "%' . esc_sql( $args['name'] ) . '%"';
+		}
+
+		$offset = $per_page * max( 0, ( $current_page - 1 ) );
+		$limit  = sprintf( ' LIMIT %d, %d', $offset, $per_page );
+
+		if ( ! empty( $args['service'] ) ) {
+			$all_services = get_terms(
+				array(
+					'taxonomy'   => 'service',
+					'hide_empty' => false,
+					'search'     => $args['service'],
+					'fields'     => 'tt_ids',
+				)
+			);
+
+			if ( empty( $all_services ) ) {
+				return array();
+			}
+
+			$service_regexp = ',' . join( '|,', $all_services );
+
+			// $tbl_tr = $wpdb->term_relationships;
+			// $join .= sprintf( ' INNER JOIN %s AS tr ON tr.object_id = ', $tbl_tr );
+			$join  .= sprintf( ' INNER JOIN %s AS usermeta ON usermeta.meta_value = posts.ID AND usermeta.meta_key = "%s"', $tbl_usermeta, self::PROFILE_META_KEY );
+			$join  .= sprintf( ' INNER JOIN %s AS usermeta2 ON usermeta.post_id = usermeta2.post_id AND usermeta2.meta_key = "service_areas"', $tbl_usermeta );
+			$where .= spirntf( ' AND concat(",", usermeta2.meta_value) REGEXP "%s"', $service_regexp );
+		}
+
+		$sql .= $join . $where . $limit;
+
+		return $wpdb->get_results( $sql );
 	}
 }
