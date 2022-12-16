@@ -355,7 +355,7 @@ class Profile extends Singletone {
 							array(
 								'base'    => str_replace( $big, '%#%', esc_url( get_pagenum_link( $big ) ) ),
 								'format'  => '?paged=%#%',
-								'total'   => $total_count,
+								'total'   => ceil( $total_count / $per_page ),
 								'current' => max( 1, $current_page ),
 							)
 						);
