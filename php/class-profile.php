@@ -437,7 +437,7 @@ class Profile extends Singletone {
 		$count_sql = "SELECT COUNT(*) FROM $tbl_posts as posts" . $join . $where;
 		return array(
 			'count' => $wpdb->get_var( $count_sql ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-			'rows'  => $wpdb->get_results( $sql ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			'rows'  => $wpdb->get_results( $sql, ARRAY_A ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		);
 	}
 }
