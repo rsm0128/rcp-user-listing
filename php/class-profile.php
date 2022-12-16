@@ -298,8 +298,8 @@ class Profile extends Singletone {
 	public function listing_markup( $atts ) {
 		$per_page     = ! empty( $_GET['per_page'] ) ? (int) $_GET['per_page'] : 20;
 		$current_page = ! empty( $_GET['_page'] ) ? (int) $_GET['_page'] : 1;
-		$name         = ! empty( $_GET['name'] ) ? sanitize_text_field( $_GET['name'] ) : '';
-		$service      = ! empty( $_GET['service'] ) ? sanitize_text_field( $_GET['service'] ) : '';
+		$name         = ! empty( $_GET['_name'] ) ? sanitize_text_field( $_GET['_name'] ) : '';
+		$service      = ! empty( $_GET['_service'] ) ? sanitize_text_field( $_GET['_service'] ) : '';
 		$is_near_me   = ! empty( $_GET['near_me'] );
 		$position     = array( 0, 0 );
 
@@ -319,18 +319,24 @@ class Profile extends Singletone {
 
 		<div class="profile-directory">
 			<div class="profile-search">
-				<form action="" method="GET">
-					<input type="text" name="name" value="<?php echo esc_attr( $name ) ?>">
-					<input type="text" name="service" value="<?php echo esc_attr( $service ) ?>">
-					<input type="submit" value="Search">
-				</form>
+				<h2 class="profile-search__title">Member Search</h2>
+				<div class="profile-search__body">
+					<h3 class="profile-search__search_by">Search By</h3>
+					<form action="" method="GET">
+						<div class="profile-search__fields">
+							<input class="profile-search__field-name" type="text" name="_name" value="<?php echo esc_attr( $name ) ?>" placeholder="Name">
+							<input class="profile-search__field-service" type="text" name="_service" value="<?php echo esc_attr( $service ) ?>" placeholder="Services">
+						</div>
+						<input class="profile-search__submit" type="submit" value="Search">
+					</form>
+				</div>
 			</div><!-- end of .profile-search -->
 			<div class="profile-items">
 
 		<?php
 		if ( ! is_wp_error( $profiles ) && ! empty( $profiles ) ) {
 			foreach ( $profiles as $profile ) {
-				$profile_id = $profile['ID'];
+				$profile_id = $profile->ID;
 				?>
 				<div class="profile-directory__item">
 					<a class="profile-directory__item-link" href="<?php echo esc_url( get_permalink( $profile_id ) ); ?>"><?php echo esc_html( get_the_title( $profile_id ) ) ?></a>
@@ -408,8 +414,8 @@ class Profile extends Singletone {
 			// $tbl_tr = $wpdb->term_relationships;
 			// $join .= sprintf( ' INNER JOIN %s AS tr ON tr.object_id = ', $tbl_tr );
 			$join  .= sprintf( ' INNER JOIN %s AS usermeta ON usermeta.meta_value = posts.ID AND usermeta.meta_key = "%s"', $tbl_usermeta, self::PROFILE_META_KEY );
-			$join  .= sprintf( ' INNER JOIN %s AS usermeta2 ON usermeta.post_id = usermeta2.post_id AND usermeta2.meta_key = "service_areas"', $tbl_usermeta );
-			$where .= spirntf( ' AND concat(",", usermeta2.meta_value) REGEXP "%s"', $service_regexp );
+			$join  .= sprintf( ' INNER JOIN %s AS usermeta2 ON usermeta.user_id = usermeta2.user_id AND usermeta2.meta_key = "service_areas"', $tbl_usermeta );
+			$where .= sprintf( ' AND concat(",", usermeta2.meta_value) REGEXP "%s"', $service_regexp );
 		}
 
 		$sql .= $join . $where . $limit;
