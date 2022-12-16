@@ -297,7 +297,7 @@ class Profile extends Singletone {
 	 */
 	public function listing_markup( $atts ) {
 		$per_page     = ! empty( $_GET['per_page'] ) ? (int) $_GET['per_page'] : 20;
-		$current_page = ! empty( $_GET['paged'] ) ? (int) $_GET['paged'] : 1;
+		$current_page = get_query_var( 'paged' );
 		$name         = ! empty( $_GET['_name'] ) ? sanitize_text_field( $_GET['_name'] ) : '';
 		$service      = ! empty( $_GET['_service'] ) ? sanitize_text_field( $_GET['_service'] ) : '';
 		$is_near_me   = ! empty( $_GET['near_me'] );
