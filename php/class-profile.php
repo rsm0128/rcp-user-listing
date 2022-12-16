@@ -297,13 +297,13 @@ class Profile extends Singletone {
 	 */
 	public function listing_markup( $atts ) {
 		$per_page     = ! empty( $_GET['per_page'] ) ? (int) $_GET['per_page'] : 20;
-		$current_page = ! empty( $_GET['_page'] ) ? (int) $_GET['_page'] : 1;
+		$current_page = ! empty( $_GET['paged'] ) ? (int) $_GET['paged'] : 1;
 		$name         = ! empty( $_GET['_name'] ) ? sanitize_text_field( $_GET['_name'] ) : '';
 		$service      = ! empty( $_GET['_service'] ) ? sanitize_text_field( $_GET['_service'] ) : '';
 		$is_near_me   = ! empty( $_GET['near_me'] );
 		$position     = array( 0, 0 );
 
-		$profiles = $this->search_profiles(
+		$query_result = $this->search_profiles(
 			array(
 				'per_page'   => $per_page,
 				'page'       => $current_page,
@@ -314,43 +314,57 @@ class Profile extends Singletone {
 			)
 		);
 
+		$profiles    = $query_result['rows'];
+		$total_count = $query_result['count'];
+
 		ob_start();
 		?>
 
 		<div class="profile-directory">
 			<div class="profile-search">
-				<h2 class="profile-search__title">Member Search</h2>
+			<h2 class="profile-search__title">Member Search</h2>
 				<div class="profile-search__body">
 					<h3 class="profile-search__search_by">Search By</h3>
 					<form action="" method="GET">
 						<div class="profile-search__fields">
-							<input class="profile-search__field-name" type="text" name="_name" value="<?php echo esc_attr( $name ) ?>" placeholder="Name">
-							<input class="profile-search__field-service" type="text" name="_service" value="<?php echo esc_attr( $service ) ?>" placeholder="Services">
+							<input class="profile-search__field-name" type="text" name="_name" value="<?php echo esc_attr( $name ); ?>" placeholder="Name">
+							<input class="profile-search__field-service" type="text" name="_service" value="<?php echo esc_attr( $service ); ?>" placeholder="Services">
 						</div>
 						<input class="profile-search__submit" type="submit" value="Search">
 					</form>
 				</div>
 			</div><!-- end of .profile-search -->
-			<div class="profile-items">
-
-		<?php
-		if ( ! is_wp_error( $profiles ) && ! empty( $profiles ) ) {
-			foreach ( $profiles as $profile ) {
-				$profile_id = $profile->ID;
-				?>
-				<div class="profile-directory__item">
-					<a class="profile-directory__item-link" href="<?php echo esc_url( get_permalink( $profile_id ) ); ?>"><?php echo esc_html( get_the_title( $profile_id ) ) ?></a>
-				</div>
-				<?php
-			}
-		} else {
-			?>
-				<div class="profile-not-found"><?php echo esc_html_e( 'No Profile Found.', 'msrcp' ) ?></div>
-			<?php
-		}
-
-		?>
-			</div><!-- end of .profile-items -->
+			<div class="profile-directory-body">
+				<?php if ( ! is_wp_error( $profiles ) && ! empty( $profiles ) ) { ?>
+					<div class="profile-items">
+						<?php
+						foreach ( $profiles as $profile ) {
+							$profile_id = $profile['ID'];
+							?>
+							<div class="profile-directory__item">
+								<a class="profile-directory__item-link" href="<?php echo esc_url( get_permalink( $profile_id ) ); ?>"><?php echo esc_html( get_the_title( $profile_id ) ); ?></a>
+							</div>
+							<?php
+						}
+						?>
+					</div><!-- end of .profile-items -->
+					<div class="profile-pagination">
+						<?php
+						$big = 999999999; // need an unlikely integer
+						echo paginate_links(
+							array(
+								'base'    => str_replace( $big, '%#%', esc_url( get_pagenum_link( $big ) ) ),
+								'format'  => '?paged=%#%',
+								'total'   => $total_count,
+								'current' => max( 1, $current_page ),
+							)
+						);
+						?>
+					</div>
+				<?php } else { ?>
+					<div class="profile-not-found"><?php echo esc_html_e( 'No Profile Found.', 'msrcp' ); ?></div>
+				<?php } ?>
+			</div><!-- end of .profile-directory-body -->
 		</div><!-- end of .profile-directory -->
 
 		<?php
@@ -362,9 +376,9 @@ class Profile extends Singletone {
 	 * Search profiles
 	 *
 	 * @param array $args Search args.
-	 * @return array Profile array.
+	 * @return array ['count' => number, 'rows' => array].
 	 */
-	public function search_profiles( $args ) {
+	private function search_profiles( $args ) {
 		$defaults = array(
 			'per_page'   => 20,
 			'page'       => 1,
@@ -420,6 +434,10 @@ class Profile extends Singletone {
 
 		$sql .= $join . $where . $limit;
 
-		return $wpdb->get_results( $sql );
+		$count_sql = "SELECT COUNT(*) FROM $tbl_posts as posts" . $join . $where;
+		return array(
+			'count' => $wpdb->get_var( $count_sql ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			'rows'  => $wpdb->get_results( $sql ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		);
 	}
 }
