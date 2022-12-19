@@ -296,12 +296,26 @@ class Profile extends Singletone {
 	 * Profile listing html.
 	 */
 	public function listing_markup( $atts ) {
-		$per_page     = ! empty( $_GET['per_page'] ) ? (int) $_GET['per_page'] : 20;
+		$per_page     = ! empty( $_GET['per_page'] ) ? (int) $_GET['per_page'] : 2;
 		$current_page = get_query_var( 'paged' );
 		$name         = ! empty( $_GET['_name'] ) ? sanitize_text_field( $_GET['_name'] ) : '';
 		$service      = ! empty( $_GET['_service'] ) ? sanitize_text_field( $_GET['_service'] ) : '';
-		$is_near_me   = ! empty( $_GET['near_me'] );
+		$near_me      = ! empty( $_GET['near_me'] );
 		$position     = array( 0, 0 );
+
+		$add_args = array();
+		if ( $name != '' ) {
+			$add_args['_name'] = $name;
+		}
+		if ( $service != '' ) {
+			$add_args['_service'] = $service;
+		}
+		if ( ! empty( $_GET['per_page'] ) ) {
+			$add_args['per_page'] = $per_page;
+		}
+		if ( $near_me != '' ) {
+			$add_args['near_me'] = $near_me;
+		}
 
 		$query_result = $this->search_profiles(
 			array(
@@ -309,7 +323,7 @@ class Profile extends Singletone {
 				'page'       => $current_page,
 				'name'       => $name,
 				'service'    => $service,
-				'is_near_me' => $is_near_me,
+				'is_near_me' => $near_me,
 				'position'   => $position,
 			)
 		);
@@ -325,7 +339,7 @@ class Profile extends Singletone {
 			<h2 class="profile-search__title">Member Search</h2>
 				<div class="profile-search__body">
 					<h3 class="profile-search__search_by">Search By</h3>
-					<form action="" method="GET">
+					<form action="<?php echo esc_url( get_permalink() ); ?>" method="GET">
 						<div class="profile-search__fields">
 							<input class="profile-search__field-name" type="text" name="_name" value="<?php echo esc_attr( $name ); ?>" placeholder="Name">
 							<input class="profile-search__field-service" type="text" name="_service" value="<?php echo esc_attr( $service ); ?>" placeholder="Services">
@@ -350,13 +364,14 @@ class Profile extends Singletone {
 					</div><!-- end of .profile-items -->
 					<div class="profile-pagination">
 						<?php
-						$big = 999999999; // need an unlikely integer
+						global $wp;
 						echo paginate_links(
 							array(
-								'base'    => str_replace( $big, '%#%', esc_url( get_pagenum_link( $big ) ) ),
-								'format'  => '?paged=%#%',
-								'total'   => ceil( $total_count / $per_page ),
-								'current' => max( 1, $current_page ),
+								'base'     => get_permalink() . '%_%',
+								'format'   => '?paged=%#%',
+								'total'    => ceil( $total_count / $per_page ),
+								'current'  => max( 1, $current_page ),
+								'add_args' => $add_args
 							)
 						);
 						?>
