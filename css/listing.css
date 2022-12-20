@@ -6,6 +6,7 @@
 	display: flex;
 	gap: 20px;
 	align-items: center;
+	justify-content: center;
 }
 
 .profile-search__fields input {
@@ -16,7 +17,6 @@
 	display: block;
 	margin: 3% auto 0 auto;
 }
-
 
 .profile-directory-row {
 	max-width: 1200px;
@@ -42,4 +42,3 @@
 	line-height: 1.2;
 	min-height: 8rem;
 }
-
