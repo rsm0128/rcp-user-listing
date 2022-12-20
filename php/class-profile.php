@@ -33,6 +33,27 @@ class Profile extends Singletone {
 	const COMPAMNY_META_KEY = 'member_business_name';
 
 	/**
+	 * Business location latitude user meta key.
+	 *
+	 * @var string
+	 */
+	const LATITUDE_META_KEY = 'bus_loc_lat';
+
+	/**
+	 * Business location longitude meta key.
+	 *
+	 * @var string
+	 */
+	const LONGITUDE_META_KEY = 'bus_loc_long';
+
+	/**
+	 * Company name meta key.
+	 *
+	 * @var string
+	 */
+	const MAP_META_KEY = 'business_location_map';
+
+	/**
 	 * Initiate the resources.
 	 */
 	public function init() {
@@ -44,7 +65,9 @@ class Profile extends Singletone {
 
 		add_shortcode( 'profile_listing', array( $this, 'listing_markup' ) );
 
-		add_filter( 'update_user_metadata', array( $this, 'update_profile_title' ), 10, 4 );
+		add_filter( 'update_user_metadata', array( $this, 'on_user_meta_update' ), 10, 4 );
+		add_action( 'wp_ajax_sync_user_bus_location', array( $this, 'on_ajax_user_location_sync' ) );
+		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_script' ) );
 	}
 
 	/**
@@ -63,6 +86,11 @@ class Profile extends Singletone {
 			'supports'        => array( 'title', 'editor', 'author' ),
 		);
 		register_post_type( self::CPT_NAME, $args );
+	}
+
+	public function enqueue_script() {
+		$version = '1.0';
+		wp_register_script( 'rcp-user-listing-js', plugins_url( 'js/listing.js', MSRCP_PATH ), array( 'jquery' ), $version, true );
 	}
 
 	/**
@@ -98,7 +126,7 @@ class Profile extends Singletone {
 		);
 
 		if ( class_exists( '\RCP\Database\Queries\Membership' ) ) {
-			$membership      = new \RCP\Database\Queries\Membership();
+			$membership      = new \RCP\Database\Queries\Membership(); // phpcs:ignore
 			$user_membership = $membership->get_item_by( 'user_id', $user_id );
 			if ( ! empty( $user_membership ) && 'active' === $user_membership->get_status() ) {
 				$post_data['post_status'] = 'publish';
@@ -275,21 +303,94 @@ class Profile extends Singletone {
 	 * @param string    $meta_key   Metadata key.
 	 * @param mixed     $meta_value Metadata value. Must be serializable if non-scalar.
 	 */
-	public function update_profile_title( $check, $user_id, $meta_key, $meta_value ) {
+	public function on_user_meta_update( $check, $user_id, $meta_key, $meta_value ) {
 		if ( self::COMPAMNY_META_KEY === $meta_key ) {
-			$profile_id = $this->get_profile_by_user( $user_id );
-			if ( ! empty( $profile_id ) ) {
-				wp_update_post(
-					array(
-						'ID'         => $profile_id,
-						'post_title' => $meta_value,
-						'post_name'  => sanitize_title( $meta_value ),
-					)
-				);
-			}
+			$this->update_profile_title( $user_id, $meta_value );
+		} elseif ( self::MAP_META_KEY === $meta_key ) {
+			$this->update_lat_long( $user_id, $meta_value );
 		}
 
 		return $check;
+	}
+
+	/**
+	 * Update profile title on user update.
+	 * @param int       $user_id  ID of the object metadata is for.
+	 * @param mixed     $bus_name Business name.
+	 * @return boolean  True on success.
+	 */
+	private function update_profile_title( $user_id, $bus_name ) {
+		$profile_id = $this->get_profile_by_user( $user_id );
+		if ( ! empty( $profile_id ) ) {
+			wp_update_post(
+				array(
+					'ID'         => $profile_id,
+					'post_title' => $bus_name,
+					'post_name'  => sanitize_title( $bus_name ),
+				)
+			);
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Update user latitude and longitude meta data by position string.
+	 *
+	 * @param int    $user_id      User ID.
+	 * @param string $lat_long_str Latitude longitude zoom comma separate string.
+	 * @return bool true on success, false on fail.
+	 */
+	private function update_lat_long( $user_id, $lat_long_str ) {
+		$pos_arr = explode( ',', $lat_long_str );
+		if ( count( $pos_arr ) >= 2 ) {
+			update_user_meta( $user_id, self::LATITUDE_META_KEY, $pos_arr[0] );
+			update_user_meta( $user_id, self::LONGITUDE_META_KEY, $pos_arr[1] );
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Ajax request handler for user business location sync.
+	 */
+	public function on_ajax_user_location_sync() {
+		// Permission check.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error(
+				array(
+					'msg' => 'You don\'t have right permission to do this action',
+				)
+			);
+		}
+
+		$this->bulk_sync_position();
+
+		wp_send_json_success(
+			array(
+				'msg' => 'Sync success',
+			)
+		);
+	}
+
+	/**
+	 * Sync all users latitude and longitude info
+	 */
+	private function bulk_sync_position() {
+		global $wpdb;
+
+		// Get all users with position info
+		$users = $wpdb->get_results(
+			$wpdb->prepare( "SELECT user_id, meta_value from {$wpdb->usermeta} WHERE meta_key=%s AND meta_value <> ''", self::MAP_META_KEY ),
+			ARRAY_A
+		);
+
+		// Update users
+		foreach ( $users as $user ) {
+			$this->update_lat_long( $user['user_id'], $user['meta_value'] );
+		}
 	}
 
 	/**
@@ -301,7 +402,17 @@ class Profile extends Singletone {
 		$name         = ! empty( $_GET['_name'] ) ? sanitize_text_field( $_GET['_name'] ) : '';
 		$service      = ! empty( $_GET['_service'] ) ? sanitize_text_field( $_GET['_service'] ) : '';
 		$near_me      = ! empty( $_GET['near_me'] );
-		$position     = array( 0, 0 );
+		$lat          = ! empty( $_GET['lat'] ) ? $_GET['lat'] : '';
+		$long         = ! empty( $_GET['long'] ) ? $_GET['long'] : '';
+
+		if ( ! empty( $lat ) && ! empty( $long ) ) {
+			$position = array(
+				'lat'  => $_GET['lat'],
+				'long' => $_GET['long'],
+			);
+		} else {
+			$position = array();
+		}
 
 		$add_args = array();
 		if ( $name != '' ) {
@@ -316,6 +427,15 @@ class Profile extends Singletone {
 		if ( $near_me != '' ) {
 			$add_args['near_me'] = $near_me;
 		}
+
+		wp_enqueue_script( 'rcp-user-listing-js' );
+		wp_localize_script(
+			'rcp-user-listing-js',
+			'msrcpAjax',
+			array(
+				'ajaxurl' => admin_url( 'admin-ajax.php' ),
+			)
+		);
 
 		$query_result = $this->search_profiles(
 			array(
@@ -344,6 +464,12 @@ class Profile extends Singletone {
 							<input class="profile-search__field-name" type="text" name="_name" value="<?php echo esc_attr( $name ); ?>" placeholder="Name">
 							<input class="profile-search__field-service" type="text" name="_service" value="<?php echo esc_attr( $service ); ?>" placeholder="Services">
 						</div>
+						<div class="profile-search__nearme">
+							<label for="input-near-me">Near Me</label>
+							<input id="input-near-me" class="profile-search__nearme" type="checkbox" name="near_me" value="1" <?php checked( $near_me, 1, true ); ?>>
+						</div>
+						<input type="hidden" id="lat" name="lat" value="<?php echo esc_attr( $lat ); ?>">
+						<input type="hidden" id="long" name="long" value="<?php echo esc_attr( $long ); ?>">
 						<input class="profile-search__submit" type="submit" value="Search">
 					</form>
 				</div>
@@ -371,7 +497,7 @@ class Profile extends Singletone {
 								'format'   => '?paged=%#%',
 								'total'    => ceil( $total_count / $per_page ),
 								'current'  => max( 1, $current_page ),
-								'add_args' => $add_args
+								'add_args' => $add_args,
 							)
 						);
 						?>
@@ -383,7 +509,6 @@ class Profile extends Singletone {
 		</div><!-- end of .profile-directory -->
 
 		<?php
-
 		return ob_get_clean();
 	}
 
@@ -409,14 +534,12 @@ class Profile extends Singletone {
 		$current_page = (int) $args['page'];
 
 		global $wpdb;
-		$tbl_posts    = $wpdb->posts;
-		$tbl_postmeta = $wpdb->postmeta;
-		$tbl_users    = $wpdb->users;
 		$tbl_usermeta = $wpdb->usermeta;
 
-		$sql   = "SELECT posts.* FROM $tbl_posts as posts";
-		$join  = '';
-		$where = sprintf( ' WHERE posts.post_status="publish" AND posts.post_type="%s"', esc_sql( self::CPT_NAME ) );
+		$select = 'SELECT posts.*';
+		$from   = " FROM {$wpdb->posts} as posts";
+		$join   = sprintf( ' INNER JOIN %s AS usermeta ON usermeta.meta_value = posts.ID AND usermeta.meta_key = "%s"', $tbl_usermeta, esc_sql( self::PROFILE_META_KEY ) );
+		$where  = sprintf( ' WHERE posts.post_status="publish" AND posts.post_type="%s"', esc_sql( self::CPT_NAME ) );
 		if ( ! empty( $args['name'] ) ) {
 			$where .= ' AND posts.post_title like "%' . esc_sql( $args['name'] ) . '%"';
 		}
@@ -442,14 +565,27 @@ class Profile extends Singletone {
 
 			// $tbl_tr = $wpdb->term_relationships;
 			// $join .= sprintf( ' INNER JOIN %s AS tr ON tr.object_id = ', $tbl_tr );
-			$join  .= sprintf( ' INNER JOIN %s AS usermeta ON usermeta.meta_value = posts.ID AND usermeta.meta_key = "%s"', $tbl_usermeta, self::PROFILE_META_KEY );
 			$join  .= sprintf( ' INNER JOIN %s AS usermeta2 ON usermeta.user_id = usermeta2.user_id AND usermeta2.meta_key = "service_areas"', $tbl_usermeta );
 			$where .= sprintf( ' AND concat(",", usermeta2.meta_value) REGEXP "%s"', $service_regexp );
 		}
 
-		$sql .= $join . $where . $limit;
+		if ( ! empty( $args['is_near_me'] ) && ! empty( $args['position'] ) ) {
+			$lat   = esc_sql( $args['position']['lat'] );
+			$long  = esc_sql( $args['position']['long'] );
+			$miles = 1;
+			$dist  = 0.00021 * $miles;
 
-		$count_sql = "SELECT COUNT(*) FROM $tbl_posts as posts" . $join . $where;
+			// $select .= " ( POW(lati.meta_value - {$lat}, 2) + POW(longi.meta_value - {$long}, 2) ) AS distance";
+			$join  .= " LEFT JOIN {$wpdb->usermeta} longi ON longi.user_id = usermeta.user_id AND longi.meta_key = 'longitude'
+				LEFT JOIN {$wpdb->usermeta} lati ON lati.user_id = usermeta.user_id AND lati.meta_key = 'latitude'";
+			$where .= " AND ( POW(lati.meta_value - {$lat}, 2) + POW(longi.meta_value - {$long}, 2) ) <= {$dist}";
+		}
+
+		$sql = $select . $from . $join . $where . $limit;
+
+		var_dump( $sql );
+
+		$count_sql = "SELECT COUNT(*) FROM {$wpdb->posts} as posts" . $join . $where;
 		return array(
 			'count' => $wpdb->get_var( $count_sql ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			'rows'  => $wpdb->get_results( $sql, ARRAY_A ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared

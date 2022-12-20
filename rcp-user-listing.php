@@ -12,7 +12,7 @@
  */
 
 define( 'MSRCP_DIR_URL', plugin_dir_url( __FILE__ ) );
-define( 'MSRCP_DIR_PATH', plugin_dir_path( __FILE__ ) );
+define( 'MSRCP_PATH', __FILE__ );
 
 require_once __DIR__ . '/php/class-singletone.php';
 require_once __DIR__ . '/php/class-main.php';
