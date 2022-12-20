@@ -1,0 +1,45 @@
+.profile-search {
+	margin-bottom: 50px;
+}
+
+.profile-search__fields {
+	display: flex;
+	gap: 20px;
+	align-items: center;
+}
+
+.profile-search__fields input {
+	max-width: 40%;
+}
+
+.profile-search__footer .profile-search__submit {
+	display: block;
+	margin: 3% auto 0 auto;
+}
+
+
+.profile-directory-row {
+	max-width: 1200px;
+	margin: 0 auto;
+	display: grid;
+	gap: 1rem;
+	align-items: center;
+	grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+}
+
+.profile-directory__item {
+	display: flex;
+    align-items: center;
+    justify-content: center;
+	border: 2px solid #b5f0ff;
+	border-radius: 10px;
+	background-color: #12adcf;
+	padding: 3%;
+	color: #fff;
+	text-align: center;
+	font-size: 1.5rem;
+	font-weight: bold;
+	line-height: 1.2;
+	min-height: 8rem;
+}
+

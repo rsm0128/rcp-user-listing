@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Profile.
  *
@@ -11,51 +12,52 @@ namespace UserListingRCP;
  * Profile class.
  */
 class Profile extends Singletone {
+
 	/**
-	 * CPT name.
-	 *
-	 * @var string
-	 */
+	* CPT name.
+	*
+	* @var string
+	*/
 	const CPT_NAME = 'profile';
 
 	/**
-	 * User meta key name for profile post id.
-	 *
-	 * @var string
-	 */
+	* User meta key name for profile post id.
+	*
+	* @var string
+	*/
 	const PROFILE_META_KEY = 'profile_id';
 
 	/**
-	 * Company name meta key.
-	 *
-	 * @var string
-	 */
+	* Company name meta key.
+	*
+	* @var string
+	*/
 	const COMPAMNY_META_KEY = 'member_business_name';
 
 	/**
-	 * Business location latitude user meta key.
-	 *
-	 * @var string
-	 */
+	* Business location latitude user meta key.
+	*
+	* @var string
+	*/
 	const LATITUDE_META_KEY = 'bus_loc_lat';
 
 	/**
-	 * Business location longitude meta key.
-	 *
-	 * @var string
-	 */
+	* Business location longitude meta key.
+	*
+	* @var string
+	*/
 	const LONGITUDE_META_KEY = 'bus_loc_long';
 
 	/**
-	 * Company name meta key.
-	 *
-	 * @var string
-	 */
+	* Company name meta key.
+	*
+	* @var string
+	*/
 	const MAP_META_KEY = 'business_location_map';
 
 	/**
-	 * Initiate the resources.
-	 */
+	* Initiate the resources.
+	*/
 	public function init() {
 		add_action( 'init', array( $this, 'register_profile_cpt' ) );
 		add_action( 'user_register', array( $this, 'add_profile_post' ), 99, 1 );
@@ -71,8 +73,8 @@ class Profile extends Singletone {
 	}
 
 	/**
-	 * Init action handler. Register profile CPT.
-	 */
+	* Init action handler. Register profile CPT.
+	*/
 	public function register_profile_cpt() {
 		$args = array(
 			'label'           => __( 'Profile', 'msrcp' ),
@@ -91,15 +93,16 @@ class Profile extends Singletone {
 	public function enqueue_script() {
 		$version = '1.0';
 		wp_register_script( 'rcp-user-listing-js', plugins_url( 'js/listing.js', MSRCP_PATH ), array( 'jquery' ), $version, true );
+		wp_register_style( 'rcp-user-listing-css', plugins_url( 'css/listing.css', MSRCP_PATH ), array(), $version );
 	}
 
 	/**
-	 * Get business name by user_id.
-	 * Returns COMPAMNY_META_KEY value or `No company {user_id}`
-	 *
-	 * @param int $user_id User ID.
-	 * @return string
-	 */
+	* Get business name by user_id.
+	* Returns COMPAMNY_META_KEY value or `No company {user_id}`
+	*
+	* @param int $user_id User ID.
+	* @return string
+	*/
 	private function generate_profile_title( $user_id ) {
 		$business_name = get_user_meta( $user_id, self::COMPAMNY_META_KEY, true );
 		if ( $business_name ) {
@@ -110,10 +113,10 @@ class Profile extends Singletone {
 	}
 
 	/**
-	 * Adds profile cpt post on user creation.
-	 *
-	 * @param int   $user_id  User ID.
-	 */
+	* Adds profile cpt post on user creation.
+	*
+	* @param int $user_id  User ID.
+	*/
 	public function add_profile_post( $user_id ) {
 		// Generate post_title with fname and lname.
 		$post_title = $this->generate_profile_title( $user_id );
@@ -141,10 +144,10 @@ class Profile extends Singletone {
 	}
 
 	/**
-	 * Delete profile post.
-	 *
-	 * @param int $user_id
-	 */
+	* Delete profile post.
+	*
+	* @param int $user_id
+	*/
 	public function delete_profile_post( $user_id ) {
 		$profile_id = get_user_meta( $user_id, self::PROFILE_META_KEY, true );
 		if ( empty( $profile_id ) ) {
@@ -155,20 +158,20 @@ class Profile extends Singletone {
 	}
 
 	/**
-	 * Return profile post id by user id.
-	 *
-	 * @param int $user_id User ID.
-	 * @return string
-	 */
+	* Return profile post id by user id.
+	*
+	* @param int $user_id User ID.
+	* @return string
+	*/
 	public static function get_profile_by_user( $user_id ) {
 		return get_user_meta( $user_id, self::PROFILE_META_KEY, true );
 	}
 
 	/**
-	 * All users with valid profile.
-	 *
-	 * @return array User ID array.
-	 */
+	* All users with valid profile.
+	*
+	* @return array User ID array.
+	*/
 	private function get_all_users_with_profile() {
 		global $wpdb;
 
@@ -187,10 +190,10 @@ class Profile extends Singletone {
 	}
 
 	/**
-	 * All users with duplicated profile.
-	 *
-	 * @return array User ID array.
-	 */
+	* All users with duplicated profile.
+	*
+	* @return array User ID array.
+	*/
 	private function get_all_users_with_duplicate_profile() {
 		global $wpdb;
 
@@ -213,10 +216,10 @@ class Profile extends Singletone {
 	}
 
 	/**
-	 * All users with valid profile.
-	 *
-	 * @return array User ID array.
-	 */
+	* All users with valid profile.
+	*
+	* @return array User ID array.
+	*/
 	private function get_all_users_with_active_membership() {
 		global $wpdb;
 		$tbl_memberships = $wpdb->prefix . 'rcp_memberships';
@@ -234,8 +237,8 @@ class Profile extends Singletone {
 	}
 
 	/**
-	 * Create profile post for existing users
-	 */
+	* Create profile post for existing users
+	*/
 	public function crete_profile_for_existing_users() {
 		$transient_name = 'doing_migration';
 		if ( 'yes' === get_transient( $transient_name ) ) {
@@ -262,8 +265,8 @@ class Profile extends Singletone {
 	}
 
 	/**
-	 * Show admin notice for duplicated entries.
-	 */
+	* Show admin notice for duplicated entries.
+	*/
 	public function admin_notices() {
 		global $pagenow;
 		if ( 'edit.php' === $pagenow && isset( $_GET['post_type'] ) && ( 'profile' === $_GET['post_type'] ) ) {
@@ -272,24 +275,24 @@ class Profile extends Singletone {
 				?>
 				<div class="notice notice-success is-dismissible">
 					<div>Duplicated profiles found.</div>
-				<?php
-				foreach ( $duplicate_user_ids as $user_id ) {
-					$posts      = get_posts(
-						array(
-							'post_type'   => self::CPT_NAME,
-							'post_status' => 'any',
-							'author'      => $user_id,
-						)
-					);
-					$post_links = array();
-					foreach ( $posts as $dup_post ) {
-						$post_links[] = sprintf( '<a href="%s">%s</a>', get_edit_post_link( $dup_post ), $dup_post->post_title );
+					<?php
+					foreach ( $duplicate_user_ids as $user_id ) {
+						$posts      = get_posts(
+							array(
+								'post_type'   => self::CPT_NAME,
+								'post_status' => 'any',
+								'author'      => $user_id,
+							)
+						);
+						$post_links = array();
+						foreach ( $posts as $dup_post ) {
+							$post_links[] = sprintf( '<a href="%s">%s</a>', get_edit_post_link( $dup_post ), $dup_post->post_title );
+						}
+						echo '<p>';
+						echo join( ', ', $post_links );
+						echo '</p>';
 					}
-					echo '<p>';
-					echo join( ', ', $post_links );
-					echo '</p>';
-				}
-				?>
+					?>
 				</div>
 				<?php
 			}
@@ -297,12 +300,13 @@ class Profile extends Singletone {
 	}
 
 	/**
-	 * Update profile title on user update.
-	 * @param null|bool $check      Whether to allow updating metadata for the given type.
-	 * @param int       $user_id    ID of the object metadata is for.
-	 * @param string    $meta_key   Metadata key.
-	 * @param mixed     $meta_value Metadata value. Must be serializable if non-scalar.
-	 */
+	* Update profile title on user update.
+	*
+	* @param null|bool $check      Whether to allow updating metadata for the given type.
+	* @param int       $user_id    ID of the object metadata is for.
+	* @param string    $meta_key   Metadata key.
+	* @param mixed     $meta_value Metadata value. Must be serializable if non-scalar.
+	*/
 	public function on_user_meta_update( $check, $user_id, $meta_key, $meta_value ) {
 		if ( self::COMPAMNY_META_KEY === $meta_key ) {
 			$this->update_profile_title( $user_id, $meta_value );
@@ -314,11 +318,12 @@ class Profile extends Singletone {
 	}
 
 	/**
-	 * Update profile title on user update.
-	 * @param int       $user_id  ID of the object metadata is for.
-	 * @param mixed     $bus_name Business name.
-	 * @return boolean  True on success.
-	 */
+	* Update profile title on user update.
+	*
+	* @param int   $user_id  ID of the object metadata is for.
+	* @param mixed $bus_name Business name.
+	* @return boolean  True on success.
+	*/
 	private function update_profile_title( $user_id, $bus_name ) {
 		$profile_id = $this->get_profile_by_user( $user_id );
 		if ( ! empty( $profile_id ) ) {
@@ -336,12 +341,12 @@ class Profile extends Singletone {
 	}
 
 	/**
-	 * Update user latitude and longitude meta data by position string.
-	 *
-	 * @param int    $user_id      User ID.
-	 * @param string $lat_long_str Latitude longitude zoom comma separate string.
-	 * @return bool true on success, false on fail.
-	 */
+	* Update user latitude and longitude meta data by position string.
+	*
+	* @param int    $user_id      User ID.
+	* @param string $lat_long_str Latitude longitude zoom comma separate string.
+	* @return bool true on success, false on fail.
+	*/
 	private function update_lat_long( $user_id, $lat_long_str ) {
 		$pos_arr = explode( ',', $lat_long_str );
 		if ( count( $pos_arr ) >= 2 ) {
@@ -354,8 +359,8 @@ class Profile extends Singletone {
 	}
 
 	/**
-	 * Ajax request handler for user business location sync.
-	 */
+	* Ajax request handler for user business location sync.
+	*/
 	public function on_ajax_user_location_sync() {
 		// Permission check.
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -376,8 +381,8 @@ class Profile extends Singletone {
 	}
 
 	/**
-	 * Sync all users latitude and longitude info
-	 */
+	* Sync all users latitude and longitude info
+	*/
 	private function bulk_sync_position() {
 		global $wpdb;
 
@@ -394,8 +399,8 @@ class Profile extends Singletone {
 	}
 
 	/**
-	 * Profile listing html.
-	 */
+	* Profile listing html.
+	*/
 	public function listing_markup( $atts ) {
 		$per_page     = ! empty( $_GET['per_page'] ) ? (int) $_GET['per_page'] : 20;
 		$current_page = get_query_var( 'paged' );
@@ -429,6 +434,7 @@ class Profile extends Singletone {
 		}
 
 		wp_enqueue_script( 'rcp-user-listing-js' );
+		wp_print_styles( 'rcp-user-listing-css' );
 		wp_localize_script(
 			'rcp-user-listing-js',
 			'msrcpAjax',
@@ -456,21 +462,21 @@ class Profile extends Singletone {
 
 		<div class="profile-directory">
 			<div class="profile-search">
-			<h2 class="profile-search__title">Member Search</h2>
 				<div class="profile-search__body">
-					<h3 class="profile-search__search_by">Search By</h3>
 					<form action="<?php echo esc_url( get_permalink() ); ?>" method="GET">
 						<div class="profile-search__fields">
 							<input class="profile-search__field-name" type="text" name="_name" value="<?php echo esc_attr( $name ); ?>" placeholder="Name">
 							<input class="profile-search__field-service" type="text" name="_service" value="<?php echo esc_attr( $service ); ?>" placeholder="Services">
+							<div class="profile-search__nearme">
+								<label for="input-near-me">Near Me</label>
+								<input id="input-near-me" class="profile-search__nearme" type="checkbox" name="near_me" value="1" <?php checked( $near_me, 1, true ); ?>>
+							</div>
 						</div>
-						<div class="profile-search__nearme">
-							<label for="input-near-me">Near Me</label>
-							<input id="input-near-me" class="profile-search__nearme" type="checkbox" name="near_me" value="1" <?php checked( $near_me, 1, true ); ?>>
+						<div class="profile-search__footer">
+							<input type="hidden" id="lat" name="lat" value="<?php echo esc_attr( $lat ); ?>">
+							<input type="hidden" id="long" name="long" value="<?php echo esc_attr( $long ); ?>">
+							<input class="profile-search__submit" type="submit" value="Search">
 						</div>
-						<input type="hidden" id="lat" name="lat" value="<?php echo esc_attr( $lat ); ?>">
-						<input type="hidden" id="long" name="long" value="<?php echo esc_attr( $long ); ?>">
-						<input class="profile-search__submit" type="submit" value="Search">
 					</form>
 				</div>
 			</div><!-- end of .profile-search -->
@@ -481,9 +487,9 @@ class Profile extends Singletone {
 						foreach ( $profiles as $profile ) {
 							$profile_id = $profile['ID'];
 							?>
-							<div class="profile-directory__item">
-								<a class="profile-directory__item-link" href="<?php echo esc_url( get_permalink( $profile_id ) ); ?>"><?php echo esc_html( get_the_title( $profile_id ) ); ?></a>
-							</div>
+							<a class="profile-directory__item" href="<?php echo esc_url( get_permalink( $profile_id ) ); ?>">
+								<span class="profile-directory__item-link"><?php echo esc_html( get_the_title( $profile_id ) ); ?></span>
+							</a>
 							<?php
 						}
 						?>
@@ -513,11 +519,11 @@ class Profile extends Singletone {
 	}
 
 	/**
-	 * Search profiles
-	 *
-	 * @param array $args Search args.
-	 * @return array ['count' => number, 'rows' => array].
-	 */
+	* Search profiles
+	*
+	* @param array $args Search args.
+	* @return array ['count' => number, 'rows' => array].
+	*/
 	private function search_profiles( $args ) {
 		$defaults = array(
 			'per_page'   => 20,
