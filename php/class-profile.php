@@ -576,14 +576,16 @@ class Profile extends Singletone {
 			$dist  = 0.00021 * $miles;
 
 			// $select .= " ( POW(lati.meta_value - {$lat}, 2) + POW(longi.meta_value - {$long}, 2) ) AS distance";
-			$join  .= " LEFT JOIN {$wpdb->usermeta} longi ON longi.user_id = usermeta.user_id AND longi.meta_key = 'longitude'
-				LEFT JOIN {$wpdb->usermeta} lati ON lati.user_id = usermeta.user_id AND lati.meta_key = 'latitude'";
+			$join  .= sprintf(
+				" INNER JOIN {$wpdb->usermeta} lati ON lati.user_id = usermeta.user_id AND lati.meta_key = '%s'
+				INNER JOIN {$wpdb->usermeta} longi ON longi.user_id = usermeta.user_id AND longi.meta_key = '%s'",
+				self::LATITUDE_META_KEY,
+				self::LONGITUDE_META_KEY,
+			);
 			$where .= " AND ( POW(lati.meta_value - {$lat}, 2) + POW(longi.meta_value - {$long}, 2) ) <= {$dist}";
 		}
 
 		$sql = $select . $from . $join . $where . $limit;
-
-		var_dump( $sql );
 
 		$count_sql = "SELECT COUNT(*) FROM {$wpdb->posts} as posts" . $join . $where;
 		return array(
