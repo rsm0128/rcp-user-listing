@@ -350,7 +350,7 @@ class Profile extends Singletone {
 			</div><!-- end of .profile-search -->
 			<div class="profile-directory-body">
 				<?php if ( ! is_wp_error( $profiles ) && ! empty( $profiles ) ) { ?>
-					<div class="profile-items">
+					<div class="profile-directory-row">
 						<?php
 						foreach ( $profiles as $profile ) {
 							$profile_id = $profile['ID'];
