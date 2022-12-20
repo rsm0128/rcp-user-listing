@@ -5,6 +5,9 @@ jQuery('document').ready(function ($) {
         alert(msg);
       });
       // sendCloseToMeRequest('61.52401', '105.318756')
+    } else {
+      $('#lat').val('');
+      $('#long').val('');  
     }
   })
 
