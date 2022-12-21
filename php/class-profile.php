@@ -478,6 +478,7 @@ class Profile extends Singletone {
 						<div class="profile-search__fields">
 							<input class="profile-search__field-name" type="text" name="_name" value="<?php echo esc_attr( $name ); ?>" placeholder="Name">
 							<select class="profile-search__field-service" name="_service" id="">
+								<option value=""></option>
 								<?php
 								if ( ! is_wp_error( $all_services ) ) :
 									foreach ( $all_services as $term ) :
