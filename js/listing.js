@@ -1,20 +1,21 @@
 jQuery('document').ready(function ($) {
-  $('.profile-search__nearme').change( 'change', function(e){
-    if (this.checked) {
-      geoFindMe(sendCloseToMeRequest, (msg) => {
-        alert(msg);
-      });
-      // sendCloseToMeRequest('61.52401', '105.318756')
-    } else {
-      $('#lat').val('');
-      $('#long').val('');  
-    }
+  $('.profile-search__field-service').select2({
+    placeholder: "Select a Service",
+    allowClear: true
+  });
+
+  $('.btn-near-me').click(function (e) {
+    geoFindMe(sendCloseToMeRequest, (msg) => {
+      alert(msg);
+    });
   })
 
   const sendCloseToMeRequest = (latitude, longitude) => {
     $('#lat').val(latitude);
     $('#long').val(longitude);
-    // $('.profile-search__submit').click();
+    $('.profile-search__field-name').val('');
+    $('.profile-search__field-service').val('');
+    $('.profile-search__submit').click();
   }
 
   function geoFindMe(successCb, failedCb) {
@@ -23,12 +24,12 @@ jQuery('document').ready(function ($) {
       const longitude = position.coords.longitude
       successCb(latitude, longitude)
     }
-    
+
     function error(e) {
       console.log(e)
       failedCb('Unable to retrieve your location')
     }
-    
+
     if (!navigator.geolocation) {
       failedCb('Geolocation is not supported by your browser')
     } else {
