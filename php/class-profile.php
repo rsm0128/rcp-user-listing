@@ -493,7 +493,7 @@ class Profile extends Singletone {
 							<input type="hidden" id="lat" name="lat" value="">
 							<input type="hidden" id="long" name="long" value="">
 							<input class="profile-search__submit" type="submit" value="Search">
-							<button class="btn-near-me wpbf-button"><i class=“fa-regular fa-compass”></i> Search Near Me</button>
+							<button class="btn-near-me wpbf-button"><i class="fa-regular fa-compass"></i>&nbsp; Search Near Me</button>
 						</div>
 					</form>
 				</div>

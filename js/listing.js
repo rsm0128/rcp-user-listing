@@ -1,7 +1,6 @@
 jQuery('document').ready(function ($) {
   $('.profile-search__field-service').select2({
     placeholder: "Select a Service",
-    allowClear: true
   });
 
   $('.btn-near-me').click(function (e) {
