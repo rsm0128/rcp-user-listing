@@ -578,7 +578,8 @@ class Profile extends Singletone {
 			// $join .= sprintf( ' INNER JOIN %s AS tr ON tr.object_id = ', $tbl_tr );
 			$join  .= sprintf( ' INNER JOIN %s AS usermeta2 ON usermeta.user_id = usermeta2.user_id AND usermeta2.meta_key = "service_areas"', $tbl_usermeta );
 			// $where .= sprintf( ' AND usermeta2.meta_value = "%s"', esc_sql( $args['service'] ) );
-			$where .= sprintf( ' AND concat(",", usermeta2.meta_value) LIKE "%s"', esc_sql( ',' . $args['service'] ) );
+			// $where .= sprintf( ' AND concat(",", usermeta2.meta_value) LIKE "%s"', esc_sql( ',' . $args['service'] ) );
+			$where .= ' AND concat(",", usermeta2.meta_value, ",") LIKE "%,' . esc_sql( $args['service'] ) . ',%"';
 		}
 
 		if ( ! empty( $args['is_near_me'] ) && ! empty( $args['position'] ) ) {
