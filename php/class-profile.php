@@ -415,7 +415,7 @@ class Profile extends Singletone {
 
 		$all_services = get_terms(
 			array(
-				'taxonomy'   => 'service',
+				'taxonomy'   => 'service-category',
 				'hide_empty' => false,
 			)
 		);
@@ -574,11 +574,7 @@ class Profile extends Singletone {
 		$limit  = sprintf( ' LIMIT %d, %d', $offset, $per_page );
 
 		if ( ! empty( $args['service'] ) ) {
-			// $tbl_tr = $wpdb->term_relationships;
-			// $join .= sprintf( ' INNER JOIN %s AS tr ON tr.object_id = ', $tbl_tr );
-			$join  .= sprintf( ' INNER JOIN %s AS usermeta2 ON usermeta.user_id = usermeta2.user_id AND usermeta2.meta_key = "service_areas"', $tbl_usermeta );
-			// $where .= sprintf( ' AND usermeta2.meta_value = "%s"', esc_sql( $args['service'] ) );
-			// $where .= sprintf( ' AND concat(",", usermeta2.meta_value) LIKE "%s"', esc_sql( ',' . $args['service'] ) );
+			$join  .= sprintf( ' INNER JOIN %s AS usermeta2 ON usermeta.user_id = usermeta2.user_id AND usermeta2.meta_key = "service_categories"', $tbl_usermeta );
 			$where .= ' AND concat(",", usermeta2.meta_value, ",") LIKE "%,' . esc_sql( $args['service'] ) . ',%"';
 		}
 
